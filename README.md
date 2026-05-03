@@ -2,7 +2,7 @@
 
 Transform your Anki cards into clean, modern flashcards — no HTML or CSS required.
 
----
+See this link for Ankiweb download and details: https://ankiweb.net/shared/info/160461098?cb=1777785058321
 
 ## Preview
 
