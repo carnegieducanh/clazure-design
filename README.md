@@ -7,7 +7,7 @@ Transform your Anki cards into clean, modern flashcards — no HTML or CSS requi
 ## Preview
 
 <p align="center">
-https://github.com/carnegieducanh/clazure-design/blob/main/docs/screenshots/preview.png?raw=true
+  <img src="https://github.com/carnegieducanh/clazure-design/blob/main/docs/screenshots/preview.png?raw=true">
 </p>
 
 <p align="center">
