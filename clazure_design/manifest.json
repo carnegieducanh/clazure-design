@@ -2,6 +2,6 @@
   "package": "clazure_design",
   "name": "Anki Prettify — Beautiful Custom Card Templates",
   "human_version": "0.1.0",
-  "min_point_version": 231000,
+  "min_point_version": 50,
   "homepage": ""
 }
