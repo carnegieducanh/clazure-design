@@ -1,0 +1,16 @@
+{
+    "auto_backup": true,
+    "max_backups": 20,
+    "backups": [],
+    "Image name for background": "MoonMountains.png",
+    "Keyboard Shortcut": "Ctrl+Shift+b",
+    "Reviewer image": true,
+    "Toolbar image": true,
+    "Toolbar top/bottom": true,
+    "background-attachment": "fixed",
+    "background opacity main": "1",
+    "background opacity review": "1",
+    "background-position": "center",
+    "background scale": "1",
+    "background-size": "cover"
+}

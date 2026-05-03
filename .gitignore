@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Anki addon user data
+# clazure_design/bg/user_files/background/
+
+# OS
+.DS_Store
+Thumbs.db
