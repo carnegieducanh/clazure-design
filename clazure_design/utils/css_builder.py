@@ -97,21 +97,6 @@ def _svg_headphones(c: str) -> str:
     )
 
 
-def _svg_waveform(c: str) -> str:
-    return (
-        f"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 52 20'%3E"
-        f"%3Crect fill='{c}' x='0' y='8' width='3' height='4' rx='1'/%3E"
-        f"%3Crect fill='{c}' x='6' y='4' width='3' height='12' rx='1'/%3E"
-        f"%3Crect fill='{c}' x='12' y='1' width='3' height='18' rx='1'/%3E"
-        f"%3Crect fill='{c}' x='18' y='4' width='3' height='12' rx='1'/%3E"
-        f"%3Crect fill='{c}' x='24' y='7' width='3' height='6' rx='1'/%3E"
-        f"%3Crect fill='{c}' x='30' y='3' width='3' height='14' rx='1'/%3E"
-        f"%3Crect fill='{c}' x='36' y='0' width='3' height='20' rx='1'/%3E"
-        f"%3Crect fill='{c}' x='42' y='5' width='3' height='10' rx='1'/%3E"
-        f"%3Crect fill='{c}' x='48' y='8' width='3' height='4' rx='1'/%3E"
-        f"%3C/svg%3E\") center/contain no-repeat"
-    )
-
 
 def build_css(template: dict, front_fields: list, back_fields: list,
               line_height: float | None = None,
@@ -166,6 +151,9 @@ def build_css(template: dict, front_fields: list, back_fields: list,
         align = f.get("align")
         if align in valid_align:
             rules.append(f"text-align: {align} !important;")
+            if is_audio_field(f["name"]):
+                jc = {"left": "flex-start", "center": "center", "right": "flex-end"}[align]
+                rules.append(f"justify-content: {jc} !important;")
         padding_v = f.get("padding_v", 0)
         padding_h = f.get("padding_h", 0)
         if padding_v or padding_h:
@@ -193,57 +181,42 @@ def build_css(template: dict, front_fields: list, back_fields: list,
             if f.get("audio_hidden"):
                 overrides.append(f".prettify-f-{slug} {{ display: none !important; }}")
                 continue
-            width = f.get("media_width", 280)
-            height = f.get("media_height", 32)
-            if isinstance(width, int) and isinstance(height, int):
-                overrides.append(
-                    f".prettify-f-{slug} audio "
-                    f"{{ max-width: min({width}px, 100%) !important; min-height: {height}px !important; }}"
-                )
-                overrides.append(
-                    f".prettify-f-{slug} .replay-button, "
-                    f".prettify-f-{slug} .soundLink, "
-                    f".prettify-f-{slug} anki-play "
-                    f"{{ max-width: min({width}px, 100%) !important; min-height: {height}px !important; }}"
-                )
-            icon_color = f.get("audio_icon_color")
-            bg_color   = f.get("audio_bg_color")
-            if icon_color or bg_color:
+            icon_size = f.get("audio_icon_size")
+            if isinstance(icon_size, int):
                 player_sel = (
                     f".prettify-f-{slug} .replay-button, "
                     f".prettify-f-{slug} .soundLink, "
                     f".prettify-f-{slug} anki-play"
                 )
-                mock_sel = f".prettify-f-{slug} .prettify-audio-mock"
-                p_rules, m_rules = [], []
-                if bg_color:
-                    p_rules.append(f"background: {bg_color} !important;")
-                    m_rules.append(f"background: {bg_color} !important;")
-                if icon_color:
-                    p_rules.append(f"color: {icon_color} !important;")
-                    m_rules.append(f"color: {icon_color} !important;")
-                if p_rules:
-                    overrides.append(f"{player_sel} {{ {' '.join(p_rules)} }}")
-                if m_rules:
-                    overrides.append(f"{mock_sel} {{ {' '.join(m_rules)} }}")
-                if icon_color:
-                    ec = _enc(icon_color)
-                    before_sel = (
-                        f".prettify-f-{slug} .replay-button::before, "
-                        f".prettify-f-{slug} .soundLink::before, "
-                        f".prettify-f-{slug} anki-play::before"
-                    )
-                    after_sel = (
-                        f".prettify-f-{slug} .replay-button::after, "
-                        f".prettify-f-{slug} .soundLink::after, "
-                        f".prettify-f-{slug} anki-play::after"
-                    )
-                    overrides.append(
-                        f"{before_sel} {{ background: {_svg_headphones(ec)} !important; }}"
-                    )
-                    overrides.append(
-                        f"{after_sel} {{ background: {_svg_waveform(ec)} !important; }}"
-                    )
+                before_sel = (
+                    f".prettify-f-{slug} .replay-button::before, "
+                    f".prettify-f-{slug} .soundLink::before, "
+                    f".prettify-f-{slug} anki-play::before"
+                )
+                overrides.append(
+                    f"{player_sel} {{ width: {icon_size}px !important; height: {icon_size}px !important; }}"
+                )
+                overrides.append(
+                    f"{before_sel} {{ width: {icon_size}px !important; height: {icon_size}px !important; }}"
+                )
+                overrides.append(
+                    f".prettify-f-{slug} .prettify-audio-mock "
+                    f"{{ width: {icon_size}px !important; height: {icon_size}px !important; }}"
+                )
+            icon_color = f.get("audio_icon_color")
+            if icon_color:
+                ec = _enc(icon_color)
+                before_sel = (
+                    f".prettify-f-{slug} .replay-button::before, "
+                    f".prettify-f-{slug} .soundLink::before, "
+                    f".prettify-f-{slug} anki-play::before"
+                )
+                overrides.append(
+                    f"{before_sel} {{ background: {_svg_headphones(ec)} !important; }}"
+                )
+                overrides.append(
+                    f".prettify-f-{slug} .prettify-audio-mock {{ color: {icon_color} !important; }}"
+                )
 
     media_overrides = """
 /* media field defaults */
@@ -267,54 +240,31 @@ def build_css(template: dict, front_fields: list, back_fields: list,
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-.prettify-field--audio audio {
-  display: inline-block;
-  width: auto;
-  max-width: min(280px, 100%);
-  margin: 4px 0;
-  accent-color: #555;
+.prettify-field--audio {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
 }
 
-/* Preview mock player (in dialog) */
+.prettify-field--audio audio {
+  display: none;
+}
+
+/* Preview mock (dialog only) */
 .prettify-audio-mock {
   display: inline-flex;
   align-items: center;
-  box-sizing: border-box;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid #e0e3ea;
-  background: #fff;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
   color: #1a1a1a;
-  width: auto;
-  height: 36px;
-  gap: 8px;
 }
 
 .nightMode .prettify-audio-mock,
 .night_mode .prettify-audio-mock {
-  border-color: #4a5060;
-  background: #2a2d35;
   color: #e8eaf0;
-}
-
-/* Card real audio player */
-.prettify-field--audio .replay-button,
-.prettify-field--audio .soundLink,
-.prettify-field--audio anki-play {
-  display: inline-flex;
-  align-items: center;
-  box-sizing: border-box;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid #e0e3ea;
-  background: #fff;
-  color: #1a1a1a;
-  text-decoration: none !important;
-  width: fit-content;
-  height: 36px;
-  gap: 8px;
-  transition: background .12s ease;
-  cursor: pointer;
 }
 
 /* Hide Anki's default play icon */
@@ -328,46 +278,48 @@ def build_css(template: dict, front_fields: list, back_fields: list,
   display: none !important;
 }
 
-/* Headphones icon on left */
+.prettify-field--audio .replay-button,
+.prettify-field--audio .soundLink,
+.prettify-field--audio anki-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
+  text-decoration: none !important;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
 .prettify-field--audio .replay-button::before,
 .prettify-field--audio .soundLink::before,
 .prettify-field--audio anki-play::before {
   content: '';
-  width: 20px;
-  height: 20px;
+  display: block;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%231a1a1a' d='M12 3C7.03 3 3 7.03 3 12v5a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-1a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-5c0-4.97-4.03-9-9-9z'/%3E%3C/svg%3E") center/contain no-repeat;
 }
 
-/* Waveform icon on right */
 .prettify-field--audio .replay-button::after,
 .prettify-field--audio .soundLink::after,
 .prettify-field--audio anki-play::after {
-  content: '';
-  width: 52px;
-  height: 20px;
-  flex-shrink: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 52 20'%3E%3Crect fill='%231a1a1a' x='0' y='8' width='3' height='4' rx='1'/%3E%3Crect fill='%231a1a1a' x='6' y='4' width='3' height='12' rx='1'/%3E%3Crect fill='%231a1a1a' x='12' y='1' width='3' height='18' rx='1'/%3E%3Crect fill='%231a1a1a' x='18' y='4' width='3' height='12' rx='1'/%3E%3Crect fill='%231a1a1a' x='24' y='7' width='3' height='6' rx='1'/%3E%3Crect fill='%231a1a1a' x='30' y='3' width='3' height='14' rx='1'/%3E%3Crect fill='%231a1a1a' x='36' y='0' width='3' height='20' rx='1'/%3E%3Crect fill='%231a1a1a' x='42' y='5' width='3' height='10' rx='1'/%3E%3Crect fill='%231a1a1a' x='48' y='8' width='3' height='4' rx='1'/%3E%3C/svg%3E") center/contain no-repeat;
+  display: none !important;
 }
 
 .prettify-field--audio .replay-button:hover,
 .prettify-field--audio .soundLink:hover,
 .prettify-field--audio anki-play:hover {
-  background: #f0f2f5;
+  transform: translateY(-3px);
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }
 
 /* Dark mode */
-.nightMode .prettify-field--audio .replay-button,
-.nightMode .prettify-field--audio .soundLink,
-.nightMode .prettify-field--audio anki-play,
-.night_mode .prettify-field--audio .replay-button,
-.night_mode .prettify-field--audio .soundLink,
-.night_mode .prettify-field--audio anki-play {
-  border-color: #4a5060;
-  background: #2a2d35;
-  color: #e8eaf0;
-}
-
 .nightMode .prettify-field--audio .replay-button::before,
 .nightMode .prettify-field--audio .soundLink::before,
 .nightMode .prettify-field--audio anki-play::before,
@@ -375,24 +327,6 @@ def build_css(template: dict, front_fields: list, back_fields: list,
 .night_mode .prettify-field--audio .soundLink::before,
 .night_mode .prettify-field--audio anki-play::before {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e8eaf0' d='M12 3C7.03 3 3 7.03 3 12v5a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-1a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-5c0-4.97-4.03-9-9-9z'/%3E%3C/svg%3E") center/contain no-repeat;
-}
-
-.nightMode .prettify-field--audio .replay-button::after,
-.nightMode .prettify-field--audio .soundLink::after,
-.nightMode .prettify-field--audio anki-play::after,
-.night_mode .prettify-field--audio .replay-button::after,
-.night_mode .prettify-field--audio .soundLink::after,
-.night_mode .prettify-field--audio anki-play::after {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 52 20'%3E%3Crect fill='%23e8eaf0' x='0' y='8' width='3' height='4' rx='1'/%3E%3Crect fill='%23e8eaf0' x='6' y='4' width='3' height='12' rx='1'/%3E%3Crect fill='%23e8eaf0' x='12' y='1' width='3' height='18' rx='1'/%3E%3Crect fill='%23e8eaf0' x='18' y='4' width='3' height='12' rx='1'/%3E%3Crect fill='%23e8eaf0' x='24' y='7' width='3' height='6' rx='1'/%3E%3Crect fill='%23e8eaf0' x='30' y='3' width='3' height='14' rx='1'/%3E%3Crect fill='%23e8eaf0' x='36' y='0' width='3' height='20' rx='1'/%3E%3Crect fill='%23e8eaf0' x='42' y='5' width='3' height='10' rx='1'/%3E%3Crect fill='%23e8eaf0' x='48' y='8' width='3' height='4' rx='1'/%3E%3C/svg%3E") center/contain no-repeat;
-}
-
-.nightMode .prettify-field--audio .replay-button:hover,
-.nightMode .prettify-field--audio .soundLink:hover,
-.nightMode .prettify-field--audio anki-play:hover,
-.night_mode .prettify-field--audio .replay-button:hover,
-.night_mode .prettify-field--audio .soundLink:hover,
-.night_mode .prettify-field--audio anki-play:hover {
-  background: #333740;
 }
 """.strip()
 

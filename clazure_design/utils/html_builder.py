@@ -8,24 +8,10 @@ Each field gets class="prettify-field prettify-f-{slug}" for per-field CSS targe
 from .field_utils import sanitize_css_class, is_audio_field, is_image_field
 
 _HEADPHONES_SVG = (
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" style="flex-shrink:0">'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" style="flex-shrink:0">'
     '<path fill="currentColor" d="M12 3C7.03 3 3 7.03 3 12v5a2 2 0 0 0 2 2h1'
     'a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-1'
     'a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-5c0-4.97-4.03-9-9-9z"/>'
-    '</svg>'
-)
-
-_WAVEFORM_SVG = (
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 20" width="52" height="20" style="flex-shrink:0">'
-    '<rect fill="currentColor" x="0" y="8" width="3" height="4" rx="1"/>'
-    '<rect fill="currentColor" x="6" y="4" width="3" height="12" rx="1"/>'
-    '<rect fill="currentColor" x="12" y="1" width="3" height="18" rx="1"/>'
-    '<rect fill="currentColor" x="18" y="4" width="3" height="12" rx="1"/>'
-    '<rect fill="currentColor" x="24" y="7" width="3" height="6" rx="1"/>'
-    '<rect fill="currentColor" x="30" y="3" width="3" height="14" rx="1"/>'
-    '<rect fill="currentColor" x="36" y="0" width="3" height="20" rx="1"/>'
-    '<rect fill="currentColor" x="42" y="5" width="3" height="10" rx="1"/>'
-    '<rect fill="currentColor" x="48" y="8" width="3" height="4" rx="1"/>'
     '</svg>'
 )
 
@@ -103,12 +89,7 @@ def _field_div(field: dict, back: bool = False) -> str:
 
 def _preview_content(field_name: str) -> str:
     if is_audio_field(field_name):
-        return (
-            f'<div class="prettify-audio-mock">'
-            f'{_HEADPHONES_SVG}'
-            f'{_WAVEFORM_SVG}'
-            f'</div>'
-        )
+        return f'<div class="prettify-audio-mock">{_HEADPHONES_SVG}</div>'
     if is_image_field(field_name):
         return (
             "<img alt='preview image' "

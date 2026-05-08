@@ -724,215 +724,66 @@ class FieldRowWidget(QFrame):
 
     def _on_color_clicked(self):
         if is_audio_field(self._field.get("name", "")):
-            self._edit_audio_colors()
+            self._edit_audio_icon_color()
         else:
             self._edit_color()
 
     def _refresh_audio_color_btn(self):
-        active = bool(self._field.get("audio_icon_color") or self._field.get("audio_bg_color"))
-        border = UI_ACCENT if active else UI_BORDER
-        self._color_btn.setText("🎨")
-        self._color_btn.setStyleSheet(
-            f"QPushButton {{ border: {'2' if active else '1'}px solid {border}; border-radius: 4px;"
-            f" background: {UI_BG_CARD}; font-size: 11px; padding: 0; }}"
-            f"QPushButton:hover {{ border-color: {UI_ACCENT}; background: {UI_BG_HOVER}; }}"
-            f"QPushButton:pressed {{ border-color: {UI_TEXT}; }}"
-        )
-        tip = "Audio colors"
-        if self._field.get("audio_icon_color"):
-            tip += f"\nIcon: {self._field['audio_icon_color']}"
-        if self._field.get("audio_bg_color"):
-            tip += f"\nBG: {self._field['audio_bg_color']}"
-        self._color_btn.setToolTip(tip)
-
-    def _edit_audio_colors(self):
-        from aqt.qt import QFormLayout
-        orig_icon = self._field.get("audio_icon_color")
-        orig_bg   = self._field.get("audio_bg_color")
-
-        dlg = QDialog(self)
-        dlg.setWindowTitle("Audio Colors")
-        dlg.setMinimumWidth(260)
-        vl = QVBoxLayout(dlg)
-        vl.setContentsMargins(12, 12, 12, 8)
-        vl.setSpacing(8)
-
-        form = QFormLayout()
-        form.setSpacing(8)
-        vl.addLayout(form)
-
-        _icon = [self._field.get("audio_icon_color")]
-        _bg   = [self._field.get("audio_bg_color")]
-
-        def _swatch_style(color):
-            if color:
-                border = "#78889f" if _is_light(color) else "#2f3b4f"
-                return (
-                    f"QPushButton {{ background-color: {color}; border: 1px solid {border}; border-radius: 4px; }}"
-                    f"QPushButton:hover {{ border-color: {UI_ACCENT}; }}"
-                )
-            return (
-                f"QPushButton {{ background: {UI_BG_CARD}; border: 1px solid {UI_BORDER}; border-radius: 4px;"
-                f" color: {UI_TEXT_MUTED}; font-size: 11px; }}"
+        color = self._field.get("audio_icon_color")
+        if color:
+            border = "#78889f" if _is_light(color) else "#2f3b4f"
+            self._color_btn.setText("")
+            self._color_btn.setToolTip(f"Icon color: {color}")
+            self._color_btn.setStyleSheet(
+                f"QPushButton {{ background-color: {color}; border: 1px solid {border}; border-radius: 4px; }}"
                 f"QPushButton:hover {{ border-color: {UI_ACCENT}; }}"
+                f"QPushButton:pressed {{ border-color: {UI_TEXT}; }}"
             )
-
-        def _reset_btn_style():
-            return (
-                "QPushButton {"
-                f" font-size: 10px; padding: 0 8px; height: 22px;"
-                f" border: 1px solid {UI_BORDER}; border-radius: 3px;"
-                f" background: {UI_BG_CARD}; color: {UI_TEXT_MUTED};"
-                "}"
-                f"QPushButton:hover {{ color: {UI_TEXT}; background: {UI_BG_HOVER}; }}"
-            )
-
-        # ── Icon color ──────────────────────────────────────────────────────
-        icon_swatch = QPushButton()
-        icon_swatch.setFixedSize(22, 22)
-        icon_swatch.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        def _refresh_icon():
-            icon_swatch.setStyleSheet(_swatch_style(_icon[0]))
-            icon_swatch.setText("" if _icon[0] else "∅")
-
-        _refresh_icon()
-
-        def _pick_icon():
-            start = QColor(_icon[0]) if _icon[0] else QColor("#1a1a1a")
-            d = QColorDialog(start, dlg)
-            d.setWindowTitle("Icon Color")
-            d.setOption(QColorDialog.ColorDialogOption.DontUseNativeDialog, True)
-            for box in d.findChildren(QDialogButtonBox):
-                ok = box.button(QDialogButtonBox.StandardButton.Ok)
-                if ok:
-                    ok.setText("Save")
-            pre = _icon[0]
-            _position_before_preview(d, self)
-            def _live_icon(c: QColor):
-                _icon[0] = c.name()
-                self._field["audio_icon_color"] = _icon[0]
-                _refresh_icon()
-                self._refresh_audio_color_btn()
-                if self._on_changed:
-                    self._on_changed()
-            d.currentColorChanged.connect(_live_icon)
-            if d.exec() != QDialog.DialogCode.Accepted:
-                _icon[0] = pre
-                self._field["audio_icon_color"] = pre
-                _refresh_icon()
-                self._refresh_audio_color_btn()
-                if self._on_changed:
-                    self._on_changed()
-                return
-            _icon[0] = d.currentColor().name()
-            self._field["audio_icon_color"] = _icon[0]
-            _refresh_icon()
-            self._refresh_audio_color_btn()
-            if self._on_changed:
-                self._on_changed()
-
-        icon_swatch.clicked.connect(_pick_icon)
-
-        icon_reset = QPushButton("Reset")
-        icon_reset.setStyleSheet(_reset_btn_style())
-        def _do_reset_icon():
-            _icon[0] = None
-            _refresh_icon()
-        icon_reset.clicked.connect(_do_reset_icon)
-
-        icon_row = QWidget()
-        icon_hl = QHBoxLayout(icon_row)
-        icon_hl.setContentsMargins(0, 0, 0, 0)
-        icon_hl.setSpacing(6)
-        icon_hl.addWidget(icon_swatch)
-        icon_hl.addWidget(icon_reset)
-        icon_hl.addStretch()
-        form.addRow("Icon color:", icon_row)
-
-        # ── Background color ────────────────────────────────────────────────
-        bg_swatch = QPushButton()
-        bg_swatch.setFixedSize(22, 22)
-        bg_swatch.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        def _refresh_bg():
-            bg_swatch.setStyleSheet(_swatch_style(_bg[0]))
-            bg_swatch.setText("" if _bg[0] else "∅")
-
-        _refresh_bg()
-
-        def _pick_bg():
-            start = QColor(_bg[0]) if _bg[0] else QColor("#ffffff")
-            d = QColorDialog(start, dlg)
-            d.setWindowTitle("Background Color")
-            d.setOption(QColorDialog.ColorDialogOption.DontUseNativeDialog, True)
-            for box in d.findChildren(QDialogButtonBox):
-                ok = box.button(QDialogButtonBox.StandardButton.Ok)
-                if ok:
-                    ok.setText("Save")
-            pre = _bg[0]
-            _position_before_preview(d, self)
-            def _live_bg(c: QColor):
-                _bg[0] = c.name()
-                self._field["audio_bg_color"] = _bg[0]
-                _refresh_bg()
-                self._refresh_audio_color_btn()
-                if self._on_changed:
-                    self._on_changed()
-            d.currentColorChanged.connect(_live_bg)
-            if d.exec() != QDialog.DialogCode.Accepted:
-                _bg[0] = pre
-                self._field["audio_bg_color"] = pre
-                _refresh_bg()
-                self._refresh_audio_color_btn()
-                if self._on_changed:
-                    self._on_changed()
-                return
-            _bg[0] = d.currentColor().name()
-            self._field["audio_bg_color"] = _bg[0]
-            _refresh_bg()
-            self._refresh_audio_color_btn()
-            if self._on_changed:
-                self._on_changed()
-
-        bg_swatch.clicked.connect(_pick_bg)
-
-        bg_reset = QPushButton("Reset")
-        bg_reset.setStyleSheet(_reset_btn_style())
-        def _do_reset_bg():
-            _bg[0] = None
-            _refresh_bg()
-        bg_reset.clicked.connect(_do_reset_bg)
-
-        bg_row = QWidget()
-        bg_hl = QHBoxLayout(bg_row)
-        bg_hl.setContentsMargins(0, 0, 0, 0)
-        bg_hl.setSpacing(6)
-        bg_hl.addWidget(bg_swatch)
-        bg_hl.addWidget(bg_reset)
-        bg_hl.addStretch()
-        form.addRow("Background:", bg_row)
-
-        # ── Save / Cancel ───────────────────────────────────────────────────
-        btns = QDialogButtonBox()
-        save_btn   = btns.addButton("Save",   QDialogButtonBox.ButtonRole.AcceptRole)
-        cancel_btn = btns.addButton(QDialogButtonBox.StandardButton.Cancel)
-        save_btn.clicked.connect(dlg.accept)
-        cancel_btn.clicked.connect(dlg.reject)
-        vl.addWidget(btns)
-
-        if dlg.exec() == QDialog.DialogCode.Accepted:
-            self._field["audio_icon_color"] = _icon[0]
-            self._field["audio_bg_color"]   = _bg[0]
-            self._refresh_audio_color_btn()
-            if self._on_changed:
-                self._on_changed()
         else:
-            self._field["audio_icon_color"] = orig_icon
-            self._field["audio_bg_color"]   = orig_bg
+            self._color_btn.setText("🎨")
+            self._color_btn.setToolTip("Set icon color")
+            self._color_btn.setStyleSheet(
+                f"QPushButton {{ border: 1px solid {UI_BORDER}; border-radius: 4px;"
+                f" background: {UI_BG_CARD}; font-size: 11px; padding: 0; }}"
+                f"QPushButton:hover {{ border-color: {UI_ACCENT}; background: {UI_BG_HOVER}; }}"
+                f"QPushButton:pressed {{ border-color: {UI_TEXT}; }}"
+            )
+
+    def _edit_audio_icon_color(self):
+        orig = self._field.get("audio_icon_color")
+        init_color = QColor(orig) if orig else QColor("#1a1a1a")
+        dlg = QColorDialog(init_color, self)
+        dlg.setWindowTitle("Icon Color")
+        dlg.setOption(QColorDialog.ColorDialogOption.DontUseNativeDialog, True)
+        for box in dlg.findChildren(QDialogButtonBox):
+            ok = box.button(QDialogButtonBox.StandardButton.Ok)
+            if ok:
+                ok.setText("Save")
+        _enforcer = _EyedropperEnforcer(_make_eyedropper_cursor(), dlg)
+        for btn in dlg.findChildren(QPushButton):
+            if "screen" in btn.text().lower():
+                btn.pressed.connect(lambda: QTimer.singleShot(0, _enforcer.start))
+                break
+        _position_before_preview(dlg, self)
+        def _live(c: QColor):
+            self._field["audio_icon_color"] = c.name()
             self._refresh_audio_color_btn()
             if self._on_changed:
                 self._on_changed()
+        dlg.currentColorChanged.connect(_live)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            if orig is None:
+                self._field.pop("audio_icon_color", None)
+            else:
+                self._field["audio_icon_color"] = orig
+            self._refresh_audio_color_btn()
+            if self._on_changed:
+                self._on_changed()
+            return
+        self._field["audio_icon_color"] = dlg.currentColor().name()
+        self._refresh_audio_color_btn()
+        if self._on_changed:
+            self._on_changed()
 
     def _size_changed(self, val: int):
         self._field["font_size"] = val
@@ -977,6 +828,7 @@ class FieldRowWidget(QFrame):
         media = audio or image
         self._color_btn.setVisible(not image)
         self._font_btn.setVisible(not media)
+        self._align_btn.setVisible(True)
         self._spin.setVisible(not media)
         self._media_size_btn.setVisible(media)
         if media:
@@ -1004,27 +856,97 @@ class FieldRowWidget(QFrame):
             self._media_size_btn.setText("Hidden")
             self._media_size_btn.setToolTip("Audio hidden on card — click to edit")
             return
-        width = self._field.get("media_width")
-        height = self._field.get("media_height")
-        if isinstance(width, int) and isinstance(height, int):
-            self._media_size_btn.setText(f"{width}x{height}")
-            self._media_size_btn.setToolTip(f"Set media size: {width}x{height}px")
+        if is_audio:
+            size = self._field.get("audio_icon_size")
+            if isinstance(size, int):
+                self._media_size_btn.setText(f"{size}px")
+                self._media_size_btn.setToolTip(f"Icon size: {size}px")
+            else:
+                self._media_size_btn.setText("Size")
+                self._media_size_btn.setToolTip("Set icon size")
         else:
-            self._media_size_btn.setText("Size")
-            self._media_size_btn.setToolTip("Set media width/height")
+            width = self._field.get("media_width")
+            height = self._field.get("media_height")
+            if isinstance(width, int) and isinstance(height, int):
+                self._media_size_btn.setText(f"{width}x{height}")
+                self._media_size_btn.setToolTip(f"Set media size: {width}x{height}px")
+            else:
+                self._media_size_btn.setText("Size")
+                self._media_size_btn.setToolTip("Set media width/height")
 
     def _edit_media_size(self) -> None:
         from aqt.qt import QFormLayout
 
-        is_audio  = is_audio_field(self._field.get("name", ""))
-        default_w = 280 if is_audio else 200
-        default_h = 32  if is_audio else 200
-        original_w      = self._field.get("media_width",  default_w)
-        original_h      = self._field.get("media_height", default_h)
-        original_hidden = self._field.get("audio_hidden", False) if is_audio else False
+        is_audio = is_audio_field(self._field.get("name", ""))
+
+        if is_audio:
+            default_sz      = 26
+            original_sz     = self._field.get("audio_icon_size", default_sz)
+            original_hidden = self._field.get("audio_hidden", False)
+
+            dlg = QDialog(self)
+            dlg.setWindowTitle("Set icon size")
+            vl = QVBoxLayout(dlg)
+            vl.setContentsMargins(14, 14, 14, 10)
+            vl.setSpacing(8)
+
+            size_form = QFormLayout()
+            size_form.setSpacing(6)
+            vl.addLayout(size_form)
+
+            sz_spin = QSpinBox(dlg)
+            sz_spin.setRange(16, 72)
+            sz_spin.setSuffix("px")
+            sz_spin.setValue(original_sz)
+
+            def _apply_sz_live() -> None:
+                self._field["audio_icon_size"] = sz_spin.value()
+                self._refresh_media_size_button()
+                if self._on_changed:
+                    self._on_changed()
+
+            sz_spin.valueChanged.connect(lambda _=None: _apply_sz_live())
+            size_form.addRow("Icon size:", sz_spin)
+
+            sep = QFrame()
+            sep.setFrameShape(QFrame.Shape.HLine)
+            sep.setFrameShadow(QFrame.Shadow.Sunken)
+            vl.addWidget(sep)
+
+            hide_check = QCheckBox("Hide audio on card")
+            hide_check.setChecked(original_hidden)
+            def _on_hide(state):
+                self._field["audio_hidden"] = hide_check.isChecked()
+                self._refresh_media_size_button()
+                if self._on_changed:
+                    self._on_changed()
+            hide_check.stateChanged.connect(_on_hide)
+            vl.addWidget(hide_check)
+
+            btns = QDialogButtonBox()
+            save_btn   = btns.addButton("Save",          QDialogButtonBox.ButtonRole.AcceptRole)
+            reset_btn  = btns.addButton("Reset default", QDialogButtonBox.ButtonRole.ResetRole)
+            cancel_btn = btns.addButton(QDialogButtonBox.StandardButton.Cancel)
+            save_btn.clicked.connect(dlg.accept)
+            cancel_btn.clicked.connect(dlg.reject)
+            reset_btn.clicked.connect(lambda: sz_spin.setValue(default_sz))
+            vl.addWidget(btns)
+
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                self._field["audio_icon_size"] = original_sz
+                self._field["audio_hidden"]    = original_hidden
+                self._refresh_media_size_button()
+                if self._on_changed:
+                    self._on_changed()
+            return
+
+        default_w = 200
+        default_h = 200
+        original_w = self._field.get("media_width",  default_w)
+        original_h = self._field.get("media_height", default_h)
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("Set audio size" if is_audio else "Set media size")
+        dlg.setWindowTitle("Set media size")
         vl = QVBoxLayout(dlg)
         vl.setContentsMargins(14, 14, 14, 10)
         vl.setSpacing(8)
@@ -1055,41 +977,18 @@ class FieldRowWidget(QFrame):
         size_form.addRow("Width:", w_spin)
         size_form.addRow("Height:", h_spin)
 
-        if is_audio:
-            sep = QFrame()
-            sep.setFrameShape(QFrame.Shape.HLine)
-            sep.setFrameShadow(QFrame.Shadow.Sunken)
-            vl.addWidget(sep)
-
-            hide_check = QCheckBox("Hide audio on card")
-            hide_check.setChecked(self._field.get("audio_hidden", False))
-            def _on_hide(state):
-                self._field["audio_hidden"] = hide_check.isChecked()
-                self._refresh_media_size_button()
-                if self._on_changed:
-                    self._on_changed()
-            hide_check.stateChanged.connect(_on_hide)
-            vl.addWidget(hide_check)
-
         btns = QDialogButtonBox()
         save_btn   = btns.addButton("Save",          QDialogButtonBox.ButtonRole.AcceptRole)
         reset_btn  = btns.addButton("Reset default", QDialogButtonBox.ButtonRole.ResetRole)
         cancel_btn = btns.addButton(QDialogButtonBox.StandardButton.Cancel)
         save_btn.clicked.connect(dlg.accept)
         cancel_btn.clicked.connect(dlg.reject)
-
-        def _reset_default() -> None:
-            w_spin.setValue(default_w)
-            h_spin.setValue(default_h)
-
-        reset_btn.clicked.connect(_reset_default)
+        reset_btn.clicked.connect(lambda: (w_spin.setValue(default_w), h_spin.setValue(default_h)))
         vl.addWidget(btns)
 
         if dlg.exec() != QDialog.DialogCode.Accepted:
             self._field["media_width"]  = original_w
             self._field["media_height"] = original_h
-            if is_audio:
-                self._field["audio_hidden"] = original_hidden
             self._refresh_media_size_button()
             if self._on_changed:
                 self._on_changed()
@@ -1251,7 +1150,7 @@ class FieldRowWidget(QFrame):
         _STYLE_KEYS = {
             "color", "font_size", "font_family", "font_weight", "font_italic",
             "align", "padding_v", "padding_h", "margin_top", "margin_bottom",
-            "media_width", "media_height", "audio_icon_color", "audio_bg_color", "audio_hidden",
+            "media_width", "media_height", "audio_icon_size", "audio_icon_color", "audio_hidden",
         }
         for k in _STYLE_KEYS:
             if k in styles:
@@ -1343,7 +1242,10 @@ class FieldRowWidget(QFrame):
         if event.button() == Qt.MouseButton.LeftButton:
             pos = event.position().toPoint()
             spacing_w = self.SPACING_BTN_W + 6
-            if self._is_media_field():
+            name = self._field.get("name", "")
+            if is_audio_field(name):
+                control_w = self.COLOR_W + 6 + self.SIZE_BTN_W + 6 + spacing_w
+            elif self._is_media_field():
                 control_w = spacing_w + self.SIZE_BTN_W + 6 + self.ALIGN_W + 6
             else:
                 control_w = spacing_w + self.SPIN_W + 6 + self.FONT_W + 6 + self.ALIGN_W + 6 + self.COLOR_W + 6
@@ -2796,7 +2698,7 @@ class PrettifyDialog(QDialog):
         _STYLE_KEYS = {
             "color", "font_size", "font_family", "font_weight", "font_italic",
             "align", "padding_v", "padding_h", "margin_top", "margin_bottom",
-            "media_width", "media_height", "audio_icon_color", "audio_bg_color", "audio_hidden",
+            "media_width", "media_height", "audio_icon_size", "audio_icon_color", "audio_hidden",
         }
         all_cur = (per_note[card_key]["front_fields"]
                    + per_note[card_key]["back_fields"]
@@ -2825,7 +2727,7 @@ class PrettifyDialog(QDialog):
         _STYLE_KEYS = {
             "color", "font_size", "font_family", "font_weight", "font_italic",
             "align", "padding_v", "padding_h", "margin_top", "margin_bottom",
-            "media_width", "media_height", "audio_icon_color", "audio_bg_color", "audio_hidden",
+            "media_width", "media_height", "audio_icon_size", "audio_icon_color", "audio_hidden",
         }
         style_by_name: dict[str, dict] = {}
         for src_key in ("note_states", "applied_note_states"):
