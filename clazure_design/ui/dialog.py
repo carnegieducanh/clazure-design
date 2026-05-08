@@ -2411,6 +2411,11 @@ class PrettifyDialog(QDialog):
         hint.setStyleSheet(f"color: {UI_TEXT_MUTED}; font-size: 10px;")
         vbox.addWidget(hint)
 
+        naming_hint = QLabel("⚠ Fields for audio must be named <b>audio</b> or <b>sound</b>, and for images <b>img</b> or <b>image</b> — otherwise media styling won't apply.")
+        naming_hint.setWordWrap(True)
+        naming_hint.setStyleSheet("color: #c8922a; font-size: 10px; margin-top: 2px;")
+        vbox.addWidget(naming_hint)
+
         vbox.addWidget(self._make_col_header())
 
         front_lbl = QLabel("Front")

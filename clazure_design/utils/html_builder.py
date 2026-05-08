@@ -85,6 +85,10 @@ def _cond(field: str, inner: str) -> str:
     return "{{#" + field + "}}" + inner + "{{/" + field + "}}"
 
 
+def _cond_formatted(field: str, inner: str, indent: str = "  ") -> str:
+    return f"{{{{#{field}}}}}\n{indent}{inner}\n{{{{/{field}}}}}"
+
+
 def _field_div(field: dict, back: bool = False) -> str:
     slug = sanitize_css_class(field["name"])
     classes = f"prettify-field prettify-f-{slug}"
@@ -133,7 +137,10 @@ def _field_rows(fields: list, back: bool, preview: bool, empty_msg: str, replace
                 if cf:
                     content = _preview_content(cf) if preview else _ref(cf)
                     inner = f'<div class="{_field_div({"name": cf}, back=back)}">{content}</div>'
-                    rows.append(inner if preview else _cond(cf, inner))
+                    if preview:
+                        rows.append(inner)
+                    else:
+                        rows.append(_cond_formatted(cf, inner))
             else:
                 rows.append(_TYPE_ANSWER_HTML)
                 if not preview and cf:
@@ -141,7 +148,10 @@ def _field_rows(fields: list, back: bool, preview: bool, empty_msg: str, replace
         else:
             content = _preview_content(f["name"]) if preview else _ref(f["name"])
             inner = f'<div class="{_field_div(f, back=back)}">{content}</div>'
-            rows.append(inner if preview else _cond(f["name"], inner))
+            if preview:
+                rows.append(inner)
+            else:
+                rows.append(_cond_formatted(f["name"], inner))
     return rows, scripts
 
 
@@ -150,10 +160,17 @@ def build_front(front_fields: list, preview: bool = False) -> str:
         front_fields, back=False, preview=preview,
         empty_msg="Add fields to Front to see content"
     )
-    parts = ['<div class="prettify-flashcard">'] + rows + ["</div>"]
-    if scripts:
-        parts.append(scripts)
-    return "\n".join(parts)
+    if preview:
+        parts = ['<div class="prettify-flashcard">'] + rows + ["</div>"]
+        if scripts:
+            parts.append(scripts)
+        return "\n".join(parts)
+    else:
+        content = "\n\n".join(rows)
+        result = f'<div class="prettify-flashcard">\n{content}\n</div>'
+        if scripts:
+            result += "\n" + scripts
+        return result
 
 
 def build_back(front_fields: list, back_fields: list, preview: bool = False) -> str:
@@ -170,13 +187,21 @@ def build_back(front_fields: list, back_fields: list, preview: bool = False) -> 
         empty_msg="Add fields to Back to see content"
     )
     scripts = front_scripts or back_scripts
-    parts = (
-        ['<div class="prettify-flashcard">']
-        + front_rows
-        + [divider]
-        + back_rows
-        + ["</div>"]
-    )
-    if scripts:
-        parts.append(scripts)
-    return "\n".join(parts)
+    if preview:
+        parts = (
+            ['<div class="prettify-flashcard">']
+            + front_rows
+            + [divider]
+            + back_rows
+            + ["</div>"]
+        )
+        if scripts:
+            parts.append(scripts)
+        return "\n".join(parts)
+    else:
+        front_content = "\n\n".join(front_rows)
+        back_content = "\n\n".join(back_rows)
+        result = f'<div class="prettify-flashcard">\n{front_content}\n\n{divider}\n\n{back_content}\n</div>'
+        if scripts:
+            result += "\n" + scripts
+        return result
