@@ -116,6 +116,7 @@ def _svg_waveform(c: str) -> str:
 def build_css(template: dict, front_fields: list, back_fields: list,
               line_height: float | None = None,
               field_gap: int | None = None,
+              content_padding: int | None = None,
               card_bg_light: str | None = None,
               card_bg_dark: str | None = None,
               hr_style: dict | None = None,
@@ -129,6 +130,12 @@ def build_css(template: dict, front_fields: list, back_fields: list,
 
     if field_gap is not None:
         overrides.append(f".prettify-field {{ margin-top: {field_gap}px !important; margin-bottom: {field_gap}px !important; }}")
+
+    if content_padding:
+        overrides.append(
+            f".prettify-field:not(.prettify-field--audio):not(.prettify-field--image) "
+            f"{{ padding-left: {content_padding}px !important; padding-right: {content_padding}px !important; }}"
+        )
 
     if card_bg_light:
         overrides.append(f".card:not(.night_mode) .prettify-flashcard {{ background: {card_bg_light} !important; }}")

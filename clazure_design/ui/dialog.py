@@ -1928,6 +1928,39 @@ class PrettifyDialog(QDialog):
         gap_hl.addStretch()
         vbox.addWidget(gap_row)
 
+        # Content Padding row
+        cp_row = QWidget()
+        cp_hl  = QHBoxLayout(cp_row)
+        cp_hl.setContentsMargins(0, 4, 0, 0)
+        cp_hl.setSpacing(2)
+
+        cp_lbl = QLabel("Content Padding:")
+        cp_lbl.setFixedWidth(100)
+        cp_lbl.setStyleSheet(f"font-size: 11px; color: {UI_TEXT};")
+        cp_hl.addWidget(cp_lbl)
+
+        self._content_padding_spin = NoWheelSpinBox()
+        self._content_padding_spin.setRange(0, 200)
+        self._content_padding_spin.setSingleStep(4)
+        self._content_padding_spin.setValue(0)
+        self._content_padding_spin.setFixedWidth(60)
+        self._content_padding_spin.setFixedHeight(22)
+        self._content_padding_spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._content_padding_spin.setStyleSheet(
+            f"QSpinBox {{ font-size: 11px; color: {UI_TEXT}; background: {UI_BG_CARD};"
+            f" border: 1px solid {UI_BORDER}; border-radius: 4px; padding: 0 4px; }}"
+        )
+        self._content_padding_spin.valueChanged.connect(self._refresh_preview)
+        self._content_padding_spin.valueChanged.connect(self._save_note_state)
+        cp_hl.addWidget(self._content_padding_spin)
+
+        cp_lbl2 = QLabel("px")
+        cp_lbl2.setStyleSheet(f"font-size: 11px; color: {UI_TEXT_MUTED};")
+        cp_hl.addWidget(cp_lbl2)
+
+        cp_hl.addStretch()
+        vbox.addWidget(cp_row)
+
         # Card BG row
         bg_row = QWidget()
         bg_hl  = QHBoxLayout(bg_row)
@@ -2735,6 +2768,7 @@ class PrettifyDialog(QDialog):
         note_states = cfg.get("note_states", {})
         lh = self._line_height_spin.value() if hasattr(self, "_line_height_spin") else 1.0
         fg = self._field_gap_spin.value() if hasattr(self, "_field_gap_spin") else -1
+        cp = self._content_padding_spin.value() if hasattr(self, "_content_padding_spin") else 0
         self._save_current_template_card_bg_state()
         def _strip_meta(fields: list) -> list:
             return [{k: v for k, v in f.items() if not k.startswith("_")} for f in fields]
@@ -2748,6 +2782,7 @@ class PrettifyDialog(QDialog):
             "prettify_template": self._tmpl_cfg.get("name", "") if self._tmpl_cfg else "",
             "line_height":       lh,
             "field_gap":         fg,
+            "content_padding":   cp,
             "card_bg_color":     self._card_bg_color,
             "card_bg_opacity":   self._card_bg_opacity,
             "card_bg_is_custom": self._card_bg_is_custom,
@@ -2911,6 +2946,10 @@ class PrettifyDialog(QDialog):
         # Restore field gap (global)
         if hasattr(self, "_field_gap_spin"):
             self._field_gap_spin.setValue(src.get("field_gap", -1))
+
+        # Restore content padding (global)
+        if hasattr(self, "_content_padding_spin"):
+            self._content_padding_spin.setValue(src.get("content_padding", 0))
 
         # Restore card BG (global)
         raw_map = src.get("card_bg_by_template")
@@ -3157,9 +3196,11 @@ class PrettifyDialog(QDialog):
         side = "back" if tab == 1 else "front"
         lh   = self._line_height_spin.value() if hasattr(self, "_line_height_spin") else 1.0
         fg   = self._field_gap_spin.value() if hasattr(self, "_field_gap_spin") else -1
+        cp   = self._content_padding_spin.value() if hasattr(self, "_content_padding_spin") else 0
         css  = build_css(self._tmpl_cfg, self._front_fields, self._back_fields,
                          line_height=lh,
                          field_gap=fg if fg >= 0 else None,
+                         content_padding=cp if cp > 0 else None,
                          card_bg_light=self._card_bg_rgba(),
                          card_bg_dark=self._card_bg_dark_rgba(),
                          hr_style=self._hr_style,
@@ -3328,6 +3369,7 @@ class PrettifyDialog(QDialog):
         self._save_note_state()
         lh = self._line_height_spin.value() if hasattr(self, "_line_height_spin") else 1.0
         fg = self._field_gap_spin.value() if hasattr(self, "_field_gap_spin") else -1
+        cp = self._content_padding_spin.value() if hasattr(self, "_content_padding_spin") else 0
 
         # Build combined CSS: current card + unique fields from all other applied cards
         seen: set[str] = {
@@ -3356,6 +3398,7 @@ class PrettifyDialog(QDialog):
             self._tmpl_cfg, self._front_fields, self._back_fields + extra_fields,
             line_height=lh,
             field_gap=fg if fg >= 0 else None,
+            content_padding=cp if cp > 0 else None,
             card_bg_light=self._card_bg_rgba(),
             card_bg_dark=self._card_bg_dark_rgba(),
             hr_style=self._hr_style,
