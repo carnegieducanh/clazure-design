@@ -111,28 +111,40 @@ def _field_rows(fields: list, back: bool, preview: bool, empty_msg: str, replace
         ], ""
     rows = []
     scripts = ""
-    for f in fields:
+    i = 0
+    while i < len(fields):
+        f = fields[i]
         if f.get("virtual"):
             cf = f.get("compare_field", "")
             if replace_virtual:
                 if cf:
                     content = _preview_content(cf) if preview else _ref(cf)
                     inner = f'<div class="{_field_div({"name": cf}, back=back)}">{content}</div>'
-                    if preview:
-                        rows.append(inner)
-                    else:
-                        rows.append(_cond_formatted(cf, inner))
+                    rows.append(inner if preview else _cond_formatted(cf, inner))
             else:
                 rows.append(_TYPE_ANSWER_HTML)
                 if not preview and cf:
                     scripts = _type_answer_scripts(cf)
-        else:
-            content = _preview_content(f["name"]) if preview else _ref(f["name"])
-            inner = f'<div class="{_field_div(f, back=back)}">{content}</div>'
-            if preview:
-                rows.append(inner)
-            else:
-                rows.append(_cond_formatted(f["name"], inner))
+            i += 1
+            continue
+        if is_audio_field(f["name"]):
+            j = i + 1
+            while j < len(fields) and not fields[j].get("virtual") and is_audio_field(fields[j]["name"]):
+                j += 1
+            audio_run = fields[i:j]
+            if len(audio_run) >= 2:
+                parts = []
+                for af in audio_run:
+                    content = _preview_content(af["name"]) if preview else _ref(af["name"])
+                    div = f'<div class="{_field_div(af, back=back)}">{content}</div>'
+                    parts.append(div if preview else _cond_formatted(af["name"], div))
+                rows.append('<div class="prettify-audio-group">\n' + "\n".join(parts) + "\n</div>")
+                i = j
+                continue
+        content = _preview_content(f["name"]) if preview else _ref(f["name"])
+        inner = f'<div class="{_field_div(f, back=back)}">{content}</div>'
+        rows.append(inner if preview else _cond_formatted(f["name"], inner))
+        i += 1
     return rows, scripts
 
 

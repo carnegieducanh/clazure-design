@@ -115,6 +115,8 @@ def build_css(template: dict, front_fields: list, back_fields: list,
 
     if field_gap is not None:
         overrides.append(f".prettify-field {{ margin-top: {field_gap}px !important; margin-bottom: {field_gap}px !important; }}")
+        overrides.append(f".prettify-audio-group {{ margin-top: {field_gap}px !important; margin-bottom: {field_gap}px !important; }}")
+        overrides.append(f".prettify-audio-group > .prettify-field--audio {{ margin-top: 0 !important; margin-bottom: 0 !important; }}")
 
     if content_padding:
         overrides.append(
@@ -218,6 +220,13 @@ def build_css(template: dict, front_fields: list, back_fields: list,
                     f".prettify-f-{slug} .prettify-audio-mock {{ color: {icon_color} !important; }}"
                 )
 
+    all_audio = [f for f in front_fields + back_fields if not f.get("virtual") and is_audio_field(f["name"])]
+    if len(all_audio) >= 2:
+        group_align = next((f.get("align") for f in all_audio if f.get("align") in valid_align), None)
+        if group_align:
+            jc = {"left": "flex-start", "center": "center", "right": "flex-end"}[group_align]
+            overrides.append(f".prettify-audio-group {{ justify-content: {jc} !important; }}")
+
     media_overrides = """
 /* media field defaults */
 .prettify-field--image img,
@@ -238,6 +247,20 @@ def build_css(template: dict, front_fields: list, back_fields: list,
 .night_mode .prettify-field--image img {
   border-color: #2e2a1e;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.prettify-audio-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.prettify-audio-group > .prettify-field--audio {
+  flex: 0 0 auto;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .prettify-field--audio {
