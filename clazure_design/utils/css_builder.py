@@ -134,7 +134,8 @@ def build_css(template: dict, front_fields: list, back_fields: list,
     if content_padding:
         overrides.append(
             f".prettify-field:not(.prettify-field--audio):not(.prettify-field--image) "
-            f"{{ padding-left: {content_padding}px !important; padding-right: {content_padding}px !important; }}"
+            f"{{ margin-left: min({content_padding}px, calc(50% - 75px)) !important;"
+            f" margin-right: min({content_padding}px, calc(50% - 75px)) !important; }}"
         )
 
     if card_bg_light:
