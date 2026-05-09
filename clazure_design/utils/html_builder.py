@@ -67,6 +67,10 @@ def _ref(field: str) -> str:
     return "{{" + field + "}}"
 
 
+def _ref_edit(field: str) -> str:
+    return "{{edit:" + field + "}}"
+
+
 def _cond(field: str, inner: str) -> str:
     return "{{#" + field + "}}" + inner + "{{/" + field + "}}"
 
@@ -141,7 +145,10 @@ def _field_rows(fields: list, back: bool, preview: bool, empty_msg: str, replace
                 rows.append('<div class="prettify-audio-group">\n' + "\n".join(parts) + "\n</div>")
                 i = j
                 continue
-        content = _preview_content(f["name"]) if preview else _ref(f["name"])
+        is_media = is_audio_field(f["name"]) or is_image_field(f["name"])
+        content = _preview_content(f["name"]) if preview else (
+            _ref(f["name"]) if is_media else _ref_edit(f["name"])
+        )
         inner = f'<div class="{_field_div(f, back=back)}">{content}</div>'
         rows.append(inner if preview else _cond_formatted(f["name"], inner))
         i += 1

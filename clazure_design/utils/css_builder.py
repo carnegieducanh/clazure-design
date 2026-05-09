@@ -171,6 +171,13 @@ def build_css(template: dict, front_fields: list, back_fields: list,
             rules.append(f"line-height: {field_lh:.1f} !important;")
         if rules:
             overrides.append(f".prettify-f-{slug} {{ {' '.join(rules)} }}")
+        if content_padding and not is_media:
+            field_align = f.get("align", "")
+            if field_align != "center":
+                overrides.append(
+                    f".mobile .prettify-f-{slug}.prettify-field "
+                    f"{{ margin-left: 1em !important; margin-right: 1em !important; }}"
+                )
         if is_image_field(f["name"]):
             width = f.get("media_width", 200)
             height = f.get("media_height", 200)
